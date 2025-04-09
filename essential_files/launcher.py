@@ -82,9 +82,25 @@ def main():
     
     print("Starting backend server...")
     try:
+        env_file = os.path.join(backend_dir, ".env")
+        env_vars = os.environ.copy()
+        
+        if os.path.exists(env_file):
+            print(f"Loading environment variables from {env_file}")
+            with open(env_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        key, value = line.split('=', 1)
+                        env_vars[key] = value.strip('"').strip("'")
+            print(f"OpenRouter API Key: {env_vars.get('OPENROUTER_API_KEY', '')[:10]}...")
+        else:
+            print("Warning: .env file not found. Using default environment variables.")
+        
         backend_process = subprocess.Popen(
-            [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8000"],
-            cwd=backend_dir
+            [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8000", "--env-file", ".env"],
+            cwd=backend_dir,
+            env=env_vars
         )
         
         print("Waiting for backend to start...")
