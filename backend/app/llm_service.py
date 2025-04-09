@@ -68,17 +68,28 @@ async def call_openrouter(
     try:
         async with httpx.AsyncClient() as client:
             logger.info(f"Calling OpenRouter API with model: {model}")
-            response = await client.post(
-                f"{OPENROUTER_BASE_URL}/chat/completions",
-                headers=headers,
-                json=payload,
-                timeout=60.0
-            )
-            
-            if response.status_code != 200:
-                error_text = response.text
-                logger.error(f"OpenRouter API error: {error_text}")
-                raise Exception(f"OpenRouter API error: {error_text}")
+            try:
+                response = await client.post(
+                    f"{OPENROUTER_BASE_URL}/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=60.0
+                )
+                
+                if response.status_code != 200:
+                    error_text = response.text
+                    logger.error(f"OpenRouter API error: {error_text}")
+                    logger.error(f"API Request Headers: {headers}")
+                    logger.error(f"API Request Payload: {payload}")
+                    logger.error(f"API Response: {error_text}")
+                    
+                    raise Exception(f"OpenRouter API error: {error_text}")
+                
+                logger.info(f"OpenRouter API call successful with status code: {response.status_code}")
+                return response.json()
+            except httpx.RequestError as e:
+                logger.error(f"HTTP Request error: {str(e)}")
+                raise Exception(f"Network error when calling OpenRouter API: {str(e)}")
             
             return response.json()
     except Exception as e:

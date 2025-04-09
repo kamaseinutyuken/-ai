@@ -6,6 +6,8 @@ import uuid
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 import json
+import logging
+import traceback
 
 from .models import (
     Message, 
@@ -19,6 +21,16 @@ from .models import (
 from .llm_service import generate_follow_up_questions
 from .excel_service import save_uploaded_file, combine_excel_analysis
 from .vba_service import generate_vba_from_data
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("backend_errors.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Mastra AI Excel VBA Generator")
 
@@ -38,6 +50,10 @@ question_rounds = {}  # session_id -> int
 
 @app.get("/healthz")
 async def healthz():
+    return {"status": "ok"}
+
+@app.get("/api/health")
+async def health_check():
     return {"status": "ok"}
 
 @app.post("/api/session")

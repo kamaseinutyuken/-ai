@@ -1,222 +1,110 @@
 import os
-import subprocess
 import shutil
-import sys
+import argparse
+import zipfile
 from pathlib import Path
-
-def check_requirements():
-    """Check if required tools are installed"""
-    print("Checking requirements...")
-    
-    python_version = sys.version_info
-    if python_version.major < 3 or (python_version.major == 3 and python_version.minor < 8):
-        print("Error: Python 3.8 or higher is required")
-        return False
-    
-    try:
-        node_version = subprocess.check_output(["node", "--version"]).decode().strip()
-        print(f"Node.js version: {node_version}")
-    except:
-        print("Error: Node.js is not installed")
-        return False
-    
-    try:
-        subprocess.check_output(["pyinstaller", "--version"])
-    except:
-        print("Installing PyInstaller...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"])
-    
-    return True
-
-def build_frontend():
-    """Build the React frontend"""
-    print("\nBuilding frontend...")
-    frontend_dir = Path("frontend")
-    
-    if not frontend_dir.exists():
-        print(f"Error: Frontend directory not found at {frontend_dir.absolute()}")
-        return False
-    
-    os.chdir(frontend_dir)
-    
-    print("Installing frontend dependencies...")
-    subprocess.check_call(["npm", "install"])
-    
-    print("Building frontend...")
-    subprocess.check_call(["npm", "run", "build"])
-    
-    os.chdir("..")
-    return True
-
-def build_backend():
-    """Build the FastAPI backend"""
-    print("\nBuilding backend...")
-    backend_dir = Path("backend")
-    
-    if not backend_dir.exists():
-        print(f"Error: Backend directory not found at {backend_dir.absolute()}")
-        return False
-    
-    os.chdir(backend_dir)
-    
-    print("Installing backend dependencies...")
-    subprocess.check_call(["poetry", "install"])
-    
-    os.chdir("..")
-    return True
-
-def create_launcher():
-    """Create a launcher script that starts both frontend and backend"""
-    print("\nCreating launcher script...")
-    
-    launcher_content = """
-import os
 import sys
-import subprocess
-import threading
-import webbrowser
-import time
-from pathlib import Path
 
-def run_backend():
-    os.chdir(Path(__file__).parent / "backend")
-    subprocess.run([sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8000"])
-
-def run_frontend():
-    os.chdir(Path(__file__).parent / "frontend" / "dist")
-    import http.server
-    import socketserver
+def create_package(output_filename="mastra_ai_excel_vba_generator.zip"):
+    """Create a package with all necessary files for the application"""
+    print("Creating Mastra AI Excel VBA Generator package...")
     
-    PORT = 5173
-    Handler = http.server.SimpleHTTPRequestHandler
+    os.makedirs("dist", exist_ok=True)
     
-    with socketserver.TCPServer(("", PORT), Handler) as httpd:
-        print(f"Serving frontend at http://localhost:{PORT}")
-        httpd.serve_forever()
-
-def main():
-    print("Starting Mastra AI Excel VBA Generator...")
+    package_dir = "dist/package"
+    if os.path.exists(package_dir):
+        shutil.rmtree(package_dir)
     
-    backend_thread = threading.Thread(target=run_backend, daemon=True)
-    backend_thread.start()
+    os.makedirs(package_dir, exist_ok=True)
+    os.makedirs(f"{package_dir}/backend", exist_ok=True)
+    os.makedirs(f"{package_dir}/backend/app", exist_ok=True)
+    os.makedirs(f"{package_dir}/essential_files", exist_ok=True)
     
-    print("Starting backend server...")
-    time.sleep(2)
+    print("Copying backend files...")
+    backend_files = [
+        "backend/requirements.txt",
+        "backend/.env",
+        "backend/app/main.py",
+        "backend/app/llm_service.py",
+        "backend/app/excel_service.py",
+        "backend/app/vba_service.py",
+        "backend/app/models.py",
+        "backend/app/__init__.py"
+    ]
+    for file in backend_files:
+        src = file
+        dst = f"{package_dir}/{file}"
+        
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        
+        if os.path.exists(src):
+            shutil.copy2(src, dst)
+            print(f"Copied {src} to {dst}")
+        else:
+            print(f"Warning: {src} does not exist")
+            if file.endswith("__init__.py"):
+                with open(dst, "w") as f:
+                    f.write("# Auto-generated __init__.py file")
+                print(f"Created empty {dst}")
     
-    frontend_thread = threading.Thread(target=run_frontend, daemon=True)
-    frontend_thread.start()
+    print("Copying essential files...")
+    essential_files = [
+        "essential_files/start_windows.bat",
+        "essential_files/run_simple.bat",
+        "essential_files/README_windows.md",
+        "essential_files/launcher.py"
+    ]
+    for file in essential_files:
+        src = file
+        dst = f"{package_dir}/{file}"
+        
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        
+        if os.path.exists(src):
+            shutil.copy2(src, dst)
+            print(f"Copied {src} to {dst}")
+        else:
+            print(f"Warning: {src} does not exist")
     
-    print("Opening application in browser...")
-    webbrowser.open("http://localhost:5173")
+    print("Copying root files...")
+    root_files = [
+        "README.md",
+        "start_windows.bat",  # Copy to root for easier access
+        "run_simple.bat"      # Copy to root for easier access
+    ]
+    for file in root_files:
+        if file == "start_windows.bat":
+            src = "essential_files/start_windows.bat"
+        elif file == "run_simple.bat":
+            src = "essential_files/run_simple.bat"
+        else:
+            src = file
+        
+        dst = f"{package_dir}/{file}"
+        
+        if os.path.exists(src):
+            shutil.copy2(src, dst)
+            print(f"Copied {src} to {dst}")
+        else:
+            print(f"Warning: {src} does not exist")
     
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("Shutting down...")
-        sys.exit(0)
+    print("Creating ZIP file...")
+    output_path = output_filename
+    with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, _, files in os.walk(package_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, package_dir)
+                zipf.write(file_path, arcname)
+    
+    print(f"Package created at {output_path}")
+    return output_path
 
 if __name__ == "__main__":
-    main()
-"""
+    parser = argparse.ArgumentParser(description='Package Mastra AI Excel VBA Generator')
+    parser.add_argument('--output', type=str, default="mastra_ai_excel_vba_generator.zip",
+                        help='Output filename for the package')
     
-    with open("launcher.py", "w") as f:
-        f.write(launcher_content)
+    args = parser.parse_args()
     
-    return True
-
-def package_application():
-    """Package the application using PyInstaller"""
-    print("\nPackaging application...")
-    
-    spec_content = """
-
-block_cipher = None
-
-a = Analysis(
-    ['launcher.py'],
-    pathex=[],
-    binaries=[],
-    datas=[
-        ('frontend/dist', 'frontend/dist'),
-        ('backend', 'backend'),
-    ],
-    hiddenimports=['uvicorn.logging', 'uvicorn.protocols', 'uvicorn.protocols.http', 'uvicorn.protocols.http.auto'],
-    hookspath=[],
-    hooksconfig={},
-    runtime_hooks=[],
-    excludes=[],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
-    noarchive=False,
-)
-
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-
-exe = EXE(
-    pyz,
-    a.scripts,
-    [],
-    exclude_binaries=True,
-    name='Mastra AI Excel VBA Generator',
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
-    console=True,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
-)
-
-coll = COLLECT(
-    exe,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
-    name='Mastra AI Excel VBA Generator',
-)
-"""
-    
-    with open("mastra_ai.spec", "w") as f:
-        f.write(spec_content)
-    
-    subprocess.check_call(["pyinstaller", "mastra_ai.spec", "--clean"])
-    
-    return True
-
-def main():
-    print("=== Mastra AI Excel VBA Generator Packaging Tool ===")
-    
-    if not check_requirements():
-        print("Failed to meet requirements. Exiting.")
-        return
-    
-    if not build_frontend():
-        print("Failed to build frontend. Exiting.")
-        return
-    
-    if not build_backend():
-        print("Failed to build backend. Exiting.")
-        return
-    
-    if not create_launcher():
-        print("Failed to create launcher script. Exiting.")
-        return
-    
-    if not package_application():
-        print("Failed to package application. Exiting.")
-        return
-    
-    print("\n=== Packaging Complete ===")
-    print("The packaged application is available in the 'dist' directory.")
-    print("To run the application, execute 'dist/Mastra AI Excel VBA Generator/Mastra AI Excel VBA Generator.exe'")
-
-if __name__ == "__main__":
-    main()
+    create_package(args.output)

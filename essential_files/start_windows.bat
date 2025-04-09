@@ -14,6 +14,18 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+echo Checking for port conflicts...
+netstat -ano | findstr :1337 >nul
+if %errorlevel% equ 0 (
+    echo [WARNING] Port 1337 is already in use.
+    echo Attempting to free the port...
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr :1337') do (
+        echo Terminating process with PID: %%a
+        taskkill /F /PID %%a >nul 2>&1
+    )
+    timeout /t 2 /nobreak >nul
+)
+
 echo Checking directory structure...
 if exist launcher.py (
     echo Found launcher.py in current directory.
@@ -74,6 +86,11 @@ if not exist backend\requirements.txt (
 echo Installing required packages...
 cd backend
 pip install -r requirements.txt
+if %errorlevel% neq 0 (
+    echo [WARNING] Failed to install from requirements.txt
+    echo Installing core packages directly...
+    pip install fastapi uvicorn python-multipart python-dotenv httpx openpyxl pandas pydantic
+)
 cd ..
 
 echo.
@@ -88,22 +105,24 @@ echo.
 echo Please wait while the application starts...
 echo.
 
-python launcher.py
+echo Starting backend server...
+start cmd /k "cd backend && python -m uvicorn app.main:app --host 127.0.0.1 --port 1337 --log-level debug"
 
-if %errorlevel% neq 0 (
-    echo.
-    echo [ERROR] Application failed to start.
-    echo.
-    echo Troubleshooting:
-    echo 1. Make sure Python 3.8 or higher is installed
-    echo 2. Make sure all required packages are installed
-    echo 3. Check if port 1337 is already in use by another application
-    echo 4. Try running the application manually:
-    echo    - Open Command Prompt
-    echo    - Navigate to this directory
-    echo    - Run: python launcher.py
-    echo.
-    echo If the problem persists, please contact support.
-)
+echo Waiting for backend to start...
+timeout /t 10 /nobreak >nul
+
+echo.
+echo Opening application in browser...
+start http://localhost:1337
+
+echo.
+echo Mastra AI Excel VBA Generator is now running!
+echo Close this window to stop the application.
+echo.
+echo If the application doesn't open automatically, please navigate to:
+echo http://localhost:1337
+echo.
+echo If you encounter any issues, please check the command prompt window
+echo that was opened for the backend server for error messages.
 
 pause
