@@ -196,10 +196,10 @@ def main():
         print("Failed to install required packages. The application may not work correctly.")
         input("\nPress Enter to continue anyway or Ctrl+C to exit...")
     
-    if is_port_in_use(8000):
-        print("\nWarning: Port 8000 is already in use. The application may not start correctly.")
-        print("Please close any other applications using port 8000 and try again.")
-        print("Common applications that use port 8000 include:")
+    if is_port_in_use(1337):
+        print("\nWarning: Port 1337 is already in use. The application may not start correctly.")
+        print("Please close any other applications using port 1337 and try again.")
+        print("Common applications that use port 1337 include:")
         print("- Other instances of this application")
         print("- Web servers (Apache, Nginx, etc.)")
         print("- Development servers (Django, Flask, etc.)")
@@ -213,7 +213,7 @@ def main():
     print("\nStarting backend server...")
     try:
         backend_process = subprocess.Popen(
-            [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8000"],
+            [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "1337"],
             cwd=backend_dir,
             env=env_vars,
             stdout=subprocess.PIPE,
@@ -222,18 +222,18 @@ def main():
         )
         
         print("Waiting for backend server to start...")
-        if check_server_running(8000, max_attempts=60):
+        if check_server_running(1337, max_attempts=60):
             print("\n✅ Backend server started successfully!")
             print("\nOpening application in browser...")
             
             time.sleep(2)
             
             try:
-                webbrowser.open("http://localhost:8000")
+                webbrowser.open("http://localhost:1337")
                 print("\n✅ Application opened in browser.")
             except Exception as e:
                 print(f"\nError opening browser: {e}")
-                print("Please manually open your browser and navigate to: http://localhost:8000")
+                print("Please manually open your browser and navigate to: http://localhost:1337")
             
             print("\n" + "="*80)
             print("Mastra AI Excel VBA Generator is now running!")
@@ -242,16 +242,16 @@ def main():
             
             while backend_process.poll() is None:
                 try:
-                    if not is_port_in_use(8000):
-                        print("\nWarning: Backend server is no longer responding on port 8000.")
+                    if not is_port_in_use(1337):
+                        print("\nWarning: Backend server is no longer responding on port 1337.")
                         print("Attempting to restart the server...")
                         backend_process.terminate()
                         backend_process = subprocess.Popen(
-                            [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8000"],
+                            [sys.executable, "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "1337"],
                             cwd=backend_dir,
                             env=env_vars
                         )
-                        if check_server_running(8000):
+                        if check_server_running(1337):
                             print("Backend server restarted successfully!")
                         else:
                             print("Failed to restart backend server.")
@@ -287,7 +287,7 @@ def main():
             
             print("\nPlease check the following:")
             print("1. Make sure all required packages are installed")
-            print("2. Check if port 8000 is already in use by another application")
+            print("2. Check if port 1337 is already in use by another application")
             print("3. Check if there are any errors in the backend code")
             
             backend_process.terminate()

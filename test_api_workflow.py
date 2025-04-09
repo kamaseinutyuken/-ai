@@ -4,7 +4,7 @@ import os
 import time
 from pathlib import Path
 
-API_URL = "http://localhost:8000"
+API_URL = "http://localhost:1337"
 
 def test_api_workflow():
     """Test the complete API workflow"""

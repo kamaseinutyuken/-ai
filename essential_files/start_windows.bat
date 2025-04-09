@@ -83,7 +83,7 @@ echo ===========================================================================
 echo.
 echo The application will open in your default web browser.
 echo If the browser doesn't open automatically, please navigate to:
-echo http://localhost:8000
+echo http://localhost:1337
 echo.
 echo Please wait while the application starts...
 echo.
@@ -97,7 +97,7 @@ if %errorlevel% neq 0 (
     echo Troubleshooting:
     echo 1. Make sure Python 3.8 or higher is installed
     echo 2. Make sure all required packages are installed
-    echo 3. Check if port 8000 is already in use by another application
+    echo 3. Check if port 1337 is already in use by another application
     echo 4. Try running the application manually:
     echo    - Open Command Prompt
     echo    - Navigate to this directory

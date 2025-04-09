@@ -19,14 +19,14 @@ pip install -r requirements.txt
 
 echo.
 echo Starting backend server...
-start cmd /k "cd backend && python -m uvicorn app.main:app --host 127.0.0.1 --port 8000"
+start cmd /k "cd backend && python -m uvicorn app.main:app --host 127.0.0.1 --port 1337"
 
 echo Waiting for backend to start...
 timeout /t 5 /nobreak >nul
 
 echo.
 echo Opening application in browser...
-start http://localhost:8000
+start http://localhost:1337
 
 echo.
 echo Mastra AI Excel VBA Generator is now running!
