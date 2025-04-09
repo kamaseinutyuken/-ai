@@ -15,7 +15,7 @@ load_dotenv()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
-USE_MOCK_RESPONSE = True
+USE_MOCK_RESPONSE = False
 
 GPT4_TURBO_MODEL = "openai/gpt-4-turbo"
 GEMINI_MODEL = "google/gemini-pro"
@@ -319,7 +319,7 @@ async def generate_follow_up_questions(
             "content": system_content + form_data_str
         })
         
-        if USE_MOCK_RESPONSE or OPENROUTER_API_KEY == "sk-or-v1-test-key" or not OPENROUTER_API_KEY:
+        if OPENROUTER_API_KEY == "sk-or-v1-test-key" or not OPENROUTER_API_KEY:
             logger.warning("Using mock response for generate_follow_up_questions")
             if question_round == 1:
                 return "工事名、施工場所、工期、作業者数についての情報をありがとうございます。次に以下の情報を教えていただけますか？\n\n1. 工事の具体的な内容（どのような作業が行われるか）\n2. 使用する主な機械・工具\n3. 特に注意すべき危険要因\n4. 過去に類似工事で発生した事故やヒヤリハット"
