@@ -12,7 +12,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+OPENROUTER_API_KEY = "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"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 USE_MOCK_RESPONSE = False
@@ -45,27 +45,16 @@ async def call_openrouter(
         logger.error("No API key found!")
         raise ValueError("OpenRouter API key is not set")
     
-    if api_key == "sk-or-v1-test-key" or not api_key:
-        logger.warning("Using mock response instead of real API call")
-        return {
-            "choices": [
-                {
-                    "message": {
-                        "content": "これはテスト応答です。実際のAPIキーを使用すると、本物のLLMからの応答が返されます。"
-                    }
-                }
-            ]
-        }
+    if not api_key:
+        logger.error("No API key found!")
+        raise ValueError("OpenRouter API key is not set")
     
-    if not api_key or len(api_key) < 20:
-        api_key = "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"
-        logger.warning(f"Using hardcoded API key: {api_key[:10]}...")
+    logger.info(f"Using API key from environment: {api_key[:10]}...")
     
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://mastra-ai-excel-vba-generator.app",
-        "OpenAI-Organization": "org-dummy",  # Required by OpenRouter
         "X-Title": "Mastra AI Excel VBA Generator"
     }
     
@@ -319,14 +308,6 @@ async def generate_follow_up_questions(
             "content": system_content + form_data_str
         })
         
-        if OPENROUTER_API_KEY == "sk-or-v1-test-key" or not OPENROUTER_API_KEY:
-            logger.warning("Using mock response for generate_follow_up_questions")
-            if question_round == 1:
-                return "工事名、施工場所、工期、作業者数についての情報をありがとうございます。次に以下の情報を教えていただけますか？\n\n1. 工事の具体的な内容（どのような作業が行われるか）\n2. 使用する主な機械・工具\n3. 特に注意すべき危険要因\n4. 過去に類似工事で発生した事故やヒヤリハット"
-            elif question_round == 2:
-                return "ありがとうございます。最後に以下の点について教えていただけますか？\n\n1. 安全対策の具体的な内容\n2. 緊急時の連絡体制\n3. 特殊な作業条件や環境要因\n4. 法令遵守に関する確認事項"
-            else:
-                return "これまでに提供していただいた情報をもとに、VBAコードを生成する準備が整いました。フォームに必要事項を入力し、「VBAコード生成」ボタンをクリックしてください。"
         
         try:
             response = await call_openrouter(
